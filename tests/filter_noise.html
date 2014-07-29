@@ -1,0 +1,24 @@
+<html>
+<body>
+<script src="../src/stk.js"></script>
+<script src="../src/generators/noise.js"></script>
+<script src="../src/filters/one.js"></script>
+<script src="framework.js"></script>
+<script>
+var noise = new Stk.WhiteNoise();
+var filters = [
+	new Stk.OnePole(-0.9),
+	new Stk.OnePole(0.9),
+	new Stk.OneZero(0.9),
+	new Stk.OneZero(-0.9),
+];
+
+scriptProcessorNode.onaudioprocess = function (event) {
+	var time = (0 | ((+new Date()) / 1000));
+	var filter = filters[time % filters.length];
+	noise.tick(event.outputBuffer, 0);
+	filter.tick(event.outputBuffer, 0);
+};
+</script>
+</body>
+</html>
