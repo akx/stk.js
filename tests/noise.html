@@ -1,0 +1,23 @@
+<html>
+<body>
+<script src="../src/stk.js"></script>
+<script src="../src/generators/noise.js"></script>
+<script src="framework.js"></script>
+<script>
+var noises = [
+	new Stk.WhiteNoise(),
+	new Stk.KelletPinkNoise(),
+	new Stk.BrownNoise(),
+	new Stk.VariablePinkNoise(0.3, 10),
+	new Stk.VariablePinkNoise(1, 5),
+	new Stk.VariablePinkNoise(1.6, 3),
+];
+
+scriptProcessorNode.onaudioprocess = function (event) {
+	var time = (0 | ((+new Date()) / 1000));
+	var noise = noises[time % noises.length];
+	noise.tick(event.outputBuffer, 0);
+};
+</script>
+</body>
+</html>
