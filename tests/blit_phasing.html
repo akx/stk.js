@@ -1,0 +1,32 @@
+<html>
+<body>
+<script src="../src/stk.js"></script>
+<script src="../src/generators/blit.js"></script>
+<script src="framework.js"></script>
+<script>
+
+var blts = [];
+for(var i = 0; i < 5; i++) {
+	var blt = new Stk.Blit(200 + i * 0.18, 13, Stk.Blit.SAW);
+	blts.push(blt);
+}
+
+scriptProcessorNode.onaudioprocess = function (event) {
+	// This is a TERRIBLE way to mix inputs, but we don't have anything
+	// better just yet. Sorry!
+	var summer = new Float32Array(event.outputBuffer.length);
+	blts.forEach(function(blt) {
+		blt.tick(event.outputBuffer, 0);
+		var buf = event.outputBuffer.getChannelData(0);
+		for (var i = 0; i < event.outputBuffer.length; i++) {
+			summer[i] += buf[i] * 0.1;
+		}
+	});
+	var data = event.outputBuffer.getChannelData(0);
+	for (var i = 0; i < event.outputBuffer.length; i++) {
+		data[i] = summer[i];
+	}
+};
+</script>
+</body>
+</html>
