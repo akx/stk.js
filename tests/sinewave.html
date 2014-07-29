@@ -1,0 +1,15 @@
+<html>
+<body>
+<script src="../src/stk.js"></script>
+<script src="../src/generators/sinewave.js"></script>
+<script src="framework.js"></script>
+<script>
+
+var sine = new Stk.SineWave(150);
+
+scriptProcessorNode.onaudioprocess = function (event) {
+	sine.tick(event.outputBuffer, 0);
+};
+</script>
+</body>
+</html>
