@@ -1,6 +1,8 @@
 (function() {
+	var analyzerBufSize = 1024;
+	var scriptBufSize = 2048;
 	var ac = new AudioContext();
-	var scn = ac.createScriptProcessor(2048, 0, 1);
+	var scn = ac.createScriptProcessor(scriptBufSize, 0, 1);
 	var gain = ac.createGain();
 	gain.gain.value = 0.5;
 	scn.connect(gain);
@@ -8,37 +10,51 @@
 	var canvas = document.createElement("canvas");
 	canvas.style.border = "1px solid black";
 	document.body.appendChild(canvas);
-	canvas.width = canvas.height = 600;
+	canvas.width = analyzerBufSize + analyzerBufSize / 2;
+	canvas.height = 600;
 	var ctx = canvas.getContext("2d");
 	var ana = ac.createAnalyser();
-	ana.fftSize = 1024;
-	var anaBuf = new Float32Array(1024);
+	ana.fftSize = analyzerBufSize;
+	ana.maxDecibels = 0;
+	var waveformBuf = new Float32Array(analyzerBufSize);
+	var fftBuf = new Uint8Array(analyzerBufSize);
 	scn.connect(ana);
 
 	function updateCanvas() {
-		ctx.fillStyle = "rgba(255,255,255,0.4)";
 		var w = canvas.width;
 		var h = canvas.height;
+		var x=0, y, i, skip=true, off;
+		ctx.fillStyle = "rgba(255,255,255,0.4)";
 		ctx.fillRect(0, 0, w, h);
 		var data = ctx.getImageData(0, 0, w, h);
 		var DATA = data.data;
-		ana.getFloatTimeDomainData(anaBuf);
+		ana.getFloatTimeDomainData(waveformBuf);
 		var yStride = w * 4;
-		var x = 0, skip = true;
-		for (var i = 0; i < anaBuf.length; i++) {
+		for (i = 0; i < waveformBuf.length; i++) {
 			if (skip) {
-				if (anaBuf[i + 1] * anaBuf[i] < 0 && anaBuf[i + 1] > anaBuf[i]) skip = false;
+				if (waveformBuf[i + 1] * waveformBuf[i] < 0 && waveformBuf[i + 1] > waveformBuf[i]) skip = false;
 				else continue;
 			}
 			if (x >= w) break;
-			var y = anaBuf[i] * h * 0.5 + h * 0.5;
+			y = waveformBuf[i] * h * 0.5 + h * 0.5;
 			//if(i == 33) console.log(y);
-			var off = (0 | y) * yStride + (0 | x) * 4;
+			off = (0 | y) * yStride + (0 | x) * 4;
 
 			DATA[off] = 0;
 			DATA[off + 1] = 0;
 			DATA[off + 2] = 0;
 			x++;
+		}
+
+		ana.getByteFrequencyData(fftBuf);
+		for(x = 0; x < fftBuf.length; x++) {
+			if(x >= w) break;
+			y = h - (fftBuf[x] / 255) * h;
+			off = (0 | y) * yStride + (0 | (analyzerBufSize + x)) * 4;
+
+			DATA[off] = 255;
+			DATA[off + 1] = 0;
+			DATA[off + 2] = 0;
 		}
 		ctx.putImageData(data, 0, 0);
 	}
